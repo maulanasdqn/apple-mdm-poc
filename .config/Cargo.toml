@@ -1,0 +1,18 @@
+[package]
+name = "mdm-config"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "config"
+path = "src/lib.rs"
+
+[dependencies]
+serde.workspace = true
+figment.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true

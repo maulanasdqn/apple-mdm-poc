@@ -1,0 +1,6 @@
+/target
+/certs
+*.db
+*.db-shm
+*.db-wal
+.env

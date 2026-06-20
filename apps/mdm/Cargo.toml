@@ -1,0 +1,50 @@
+[package]
+name = "mdm"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "mdm"
+path = "src/lib.rs"
+
+[features]
+# Compile the real APNs push client (requires the Apple vendor push cert).
+# Off by default so the scaffold builds with zero Apple credentials.
+apns-real = ["dep:a2"]
+
+[dependencies]
+config.workspace = true
+
+# HTTP / presentation
+axum.workspace = true
+tower-http.workspace = true
+
+# Protocol
+plist.workspace = true
+serde.workspace = true
+serde_bytes.workspace = true
+serde_json.workspace = true
+base64.workspace = true
+uuid.workspace = true
+time.workspace = true
+
+# Persistence
+sqlx.workspace = true
+
+# Crypto
+openssl.workspace = true
+rcgen.workspace = true
+
+# APNs (real client gated behind `apns-real`; no-op default needs no Apple certs)
+a2 = { workspace = true, optional = true }
+tokio.workspace = true
+
+# Errors / logging / async traits
+thiserror.workspace = true
+tracing.workspace = true
+async-trait.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

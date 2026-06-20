@@ -1,0 +1,68 @@
+[workspace]
+resolver = "2"
+members = [
+    ".config",
+    ".migrations",
+    "apps/gateway",
+    "apps/mdm",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.96"
+license = "MIT"
+authors = ["maulanasdqn"]
+
+[workspace.dependencies]
+# Async runtime + HTTP
+tokio = { version = "1", features = ["full"] }
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace", "limit"] }
+
+# Apple MDM protocol (plist messages everywhere)
+plist = "1"
+
+# Persistence
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio-rustls",
+    "sqlite",
+    "migrate",
+    "macros",
+    "uuid",
+    "time",
+] }
+
+# Crypto: CA, device certs, CMS profile signing, SCEP envelopes
+openssl = { version = "0.10", features = ["vendored"] }
+rcgen = "0.13"
+
+# APNs HTTP/2 push (certificate-auth for MDM topics)
+a2 = "0.10"
+
+# Serde + encodings
+serde = { version = "1", features = ["derive"] }
+serde_bytes = "0.11"
+serde_json = "1"
+base64 = "0.22"
+uuid = { version = "1", features = ["v4", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
+
+# Async traits (object-safe ports)
+async-trait = "0.1"
+
+# Config, logging, errors
+figment = { version = "0.10", features = ["env", "toml"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "2"
+anyhow = "1"
+
+# Internal crates
+config = { package = "mdm-config", path = ".config" }
+migrations = { package = "mdm-migrations", path = ".migrations" }
+mdm = { package = "mdm", path = "apps/mdm" }
+
+[profile.release]
+strip = true
+lto = "thin"
