@@ -3,9 +3,10 @@
 A custom Apple **MDM (Mobile Device Management)** server in Rust, built to enroll
 an iPhone and lock it down (restrictions, remote lock, query, erase).
 
-It follows a clean-architecture Cargo workspace: `domain → application →
-infrastructure → presentation`, with Axum 0.8, SQLite (sqlx), OpenSSL for
-certificate/CMS signing, and APNs behind a swappable port.
+It speaks the Apple MDM protocol: it serves a signed enrollment profile, handles
+device check-in, queues commands per device, and wakes devices over APNs to pull
+those commands. Built with Axum 0.8, SQLite (sqlx), and OpenSSL for
+certificate / CMS signing.
 
 > Status: **scaffold**. Enrollment-profile generation, device check-in, the
 > command queue, and lockdown commands are implemented and verified end-to-end
@@ -14,20 +15,14 @@ certificate/CMS signing, and APNs behind a swappable port.
 
 ## Layout
 
-```
-.config/        shared config, logging, db pool        (crate: mdm-config)
-.migrations/    sqlx migrations                          (crate: mdm-migrations)
-apps/gateway/   binary entrypoint / composition root     (crate: gateway)
-apps/mdm/       the MDM module, four clean-arch layers    (crate: mdm)
-  domain/         entities + ports (traits), no framework deps
-  application/    use cases (enroll, checkin, poll, enqueue)
-  infrastructure/ adapters: sqlite, apns (noop/a2), cert (openssl CA + CMS)
-  presentation/   axum router, handlers, DTOs, state
-```
+A Cargo workspace:
 
-Dependency flow is enforced by module imports: `presentation → application →
-domain`; `infrastructure` implements `domain::ports` and is injected at the
-composition root in `apps/gateway/src/main.rs`.
+```
+.config/        shared config, logging, db pool   (crate: mdm-config)
+.migrations/    sqlx migrations                    (crate: mdm-migrations)
+apps/gateway/   binary entrypoint, starts the server (crate: gateway)
+apps/mdm/       the MDM server library             (crate: mdm)
+```
 
 ## Run
 
