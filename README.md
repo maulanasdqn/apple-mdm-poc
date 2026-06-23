@@ -22,7 +22,12 @@ A Cargo workspace:
 .migrations/    sqlx migrations                    (crate: mdm-migrations)
 apps/gateway/   binary entrypoint, starts the server (crate: gateway)
 apps/mdm/       the MDM server library             (crate: mdm)
+apps/worker/    WASM build for Cloudflare Workers  (crate: mdm-worker)
 ```
+
+`apps/worker/` is a separate, self-contained WebAssembly port that runs on
+Cloudflare Workers with D1 storage — the native openssl/sqlx/tokio stack can't
+target wasm32. It's the deployed version (see below).
 
 ## Run
 
@@ -48,19 +53,69 @@ files are present.
 | GET        | `/admin/devices`          | List enrolled devices (JSON)                       |
 | POST       | `/admin/commands/{udid}`  | Enqueue a command (dev/automation)                 |
 
-### Enqueue a lockdown command
+## Deployed: Cloudflare Workers (`mdm.stynx.app`)
+
+The `apps/worker/` crate is deployed as a WebAssembly Worker backed by D1.
+It serves an unsigned enrollment profile over Cloudflare's TLS and embeds one
+OpenSSL-built PKCS#12 device identity (shared across devices — fine for
+personal lockdown, not multi-tenant).
 
 ```bash
-# Remote-lock with a PIN
+cd apps/worker
+CLOUDFLARE_ACCOUNT_ID=<acct> npx wrangler deploy   # build (worker-build) + deploy
+npx wrangler tail mdm                              # live logs
+npx wrangler d1 execute mdm --remote --file=schema.sql   # (re)apply schema
+```
+
+Build notes: needs `worker` crate >= 0.8 with `worker-build` >= 0.8.5, and the
+release profile must **not** set `strip = true` (stripping removes the wasm
+`target_features` section wasm-bindgen needs).
+
+### Command reference
+
+All commands: `POST /admin/commands/<UDID>` with a JSON body. The `type`
+discriminates. "Supervised?" marks commands that only take effect on a
+supervised device (Apple Configurator / ADE); the rest work on any enrolled
+device.
+
+| `type`              | Body fields                                                                 | Effect                                  | Supervised? |
+|---------------------|-----------------------------------------------------------------------------|-----------------------------------------|:-----------:|
+| `DeviceLock`        | `message?`, `phone_number?`, `pin?` (PIN = macOS firmware only)              | Lock the screen                         | no          |
+| `EraseDevice`       | `pin?`                                                                       | Wipe the device                         | no          |
+| `DeviceInformation` | `queries?` (defaults to name/OS/product/serial)                             | Query device facts                      | no          |
+| `EnableLostMode`    | `message?`, `phone_number?`, `footnote?`                                     | Lock to a message; user can't disable   | **yes**     |
+| `DisableLostMode`   | —                                                                           | Release Lost Mode                       | **yes**     |
+| `PlayLostModeSound` | —                                                                           | Ring while in Lost Mode                 | **yes**     |
+| `DeviceLocation`    | —                                                                           | Return location (in Lost Mode)          | **yes**     |
+| `Restrictions`      | any of `allow_camera`, `allow_safari`, `allow_app_installation`, `allow_app_removal`, `allow_screenshot`, `allow_erase_content_and_settings`, `allow_account_modification`, `allow_ui_configuration_profile_installation`, `allow_activation_lock`, `force_automatic_date_and_time` | Install a `com.apple.applicationaccess` profile | **yes** |
+| `Lockdown`          | —                                                                           | Strict preset: blocks factory reset, account changes, profile/app changes | **yes** |
+| `RemoveProfile`     | `identifier`                                                                | Remove a managed profile                | no          |
+
+```bash
+# Lock the screen
+curl -X POST https://mdm.stynx.app/admin/commands/<UDID> \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"DeviceLock","message":"Locked by Rust MDM"}'
+
+# Borrower lockout on a SUPERVISED device: prevent escape, then Lost-Mode lock
+curl -X POST https://mdm.stynx.app/admin/commands/<UDID> \
+  -H 'Content-Type: application/json' -d '{"type":"Lockdown"}'
+curl -X POST https://mdm.stynx.app/admin/commands/<UDID> \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"EnableLostMode","message":"This device is locked. Contact owner.","phone_number":"+62...","footnote":"Property of owner"}'
+```
+
+> **Supervision** (which erases the device) is required for Lost Mode and all
+> restrictions — Apple ignores them on an unsupervised device, where the holder
+> can also just remove the management profile. **APNs is no-op**, so commands
+> are delivered on the device's own poll cadence, not via push.
+
+### Local dev (native gateway)
+
+```bash
 curl -X POST localhost:8080/admin/commands/<UDID> \
   -H 'Content-Type: application/json' \
   -d '{"type":"DeviceLock","pin":"123456","message":"Locked by MDM"}'
-
-# Apply restrictions (compiled into an InstallProfile carrying
-# com.apple.applicationaccess)
-curl -X POST localhost:8080/admin/commands/<UDID> \
-  -H 'Content-Type: application/json' \
-  -d '{"type":"Restrictions","allow_camera":false,"allow_app_installation":false,"allow_safari":false}'
 ```
 
 ## How lockdown actually reaches a device
