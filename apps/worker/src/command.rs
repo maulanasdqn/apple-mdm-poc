@@ -39,6 +39,15 @@ pub enum Command {
         #[serde(rename = "Identifier")]
         Identifier: String,
     },
+    EnableLostMode {
+        #[serde(rename = "Message", skip_serializing_if = "Option::is_none")]
+        Message: Option<String>,
+        #[serde(rename = "PhoneNumber", skip_serializing_if = "Option::is_none")]
+        PhoneNumber: Option<String>,
+        #[serde(rename = "Footnote", skip_serializing_if = "Option::is_none")]
+        Footnote: Option<String>,
+    },
+    DisableLostMode {},
 }
 
 impl Command {
@@ -49,6 +58,8 @@ impl Command {
             Command::DeviceInformation { .. } => "DeviceInformation",
             Command::InstallProfile { .. } => "InstallProfile",
             Command::RemoveProfile { .. } => "RemoveProfile",
+            Command::EnableLostMode { .. } => "EnableLostMode",
+            Command::DisableLostMode {} => "DisableLostMode",
         }
     }
 }
@@ -91,6 +102,12 @@ pub enum AdminCommand {
     RemoveProfile {
         identifier: String,
     },
+    EnableLostMode {
+        message: Option<String>,
+        phone_number: Option<String>,
+        footnote: Option<String>,
+    },
+    DisableLostMode {},
 }
 
 impl AdminCommand {
@@ -129,6 +146,16 @@ impl AdminCommand {
             AdminCommand::RemoveProfile { identifier } => Command::RemoveProfile {
                 Identifier: identifier,
             },
+            AdminCommand::EnableLostMode {
+                message,
+                phone_number,
+                footnote,
+            } => Command::EnableLostMode {
+                Message: message,
+                PhoneNumber: phone_number,
+                Footnote: footnote,
+            },
+            AdminCommand::DisableLostMode {} => Command::DisableLostMode {},
         })
     }
 }
