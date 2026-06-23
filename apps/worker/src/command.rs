@@ -48,6 +48,8 @@ pub enum Command {
         Footnote: Option<String>,
     },
     DisableLostMode {},
+    PlayLostModeSound {},
+    DeviceLocation {},
 }
 
 impl Command {
@@ -60,6 +62,8 @@ impl Command {
             Command::RemoveProfile { .. } => "RemoveProfile",
             Command::EnableLostMode { .. } => "EnableLostMode",
             Command::DisableLostMode {} => "DisableLostMode",
+            Command::PlayLostModeSound {} => "PlayLostModeSound",
+            Command::DeviceLocation {} => "DeviceLocation",
         }
     }
 }
@@ -108,6 +112,8 @@ pub enum AdminCommand {
         footnote: Option<String>,
     },
     DisableLostMode {},
+    PlayLostModeSound {},
+    DeviceLocation {},
 }
 
 impl AdminCommand {
@@ -156,6 +162,8 @@ impl AdminCommand {
                 Footnote: footnote,
             },
             AdminCommand::DisableLostMode {} => Command::DisableLostMode {},
+            AdminCommand::PlayLostModeSound {} => Command::PlayLostModeSound {},
+            AdminCommand::DeviceLocation {} => Command::DeviceLocation {},
         })
     }
 }
