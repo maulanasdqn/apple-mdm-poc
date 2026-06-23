@@ -79,19 +79,69 @@ pub fn build_enrollment_profile(params: &EnrollmentParams) -> Result<Vec<u8>, St
     serialize(profile)
 }
 
+#[derive(Debug, Clone)]
 pub struct RestrictionParams {
     pub allow_app_installation: bool,
+    pub allow_app_removal: bool,
     pub allow_camera: bool,
     pub allow_safari: bool,
     pub allow_screenshot: bool,
+    pub allow_erase_content_and_settings: bool,
+    pub allow_account_modification: bool,
+    pub allow_ui_configuration_profile_installation: bool,
+    pub allow_activation_lock: bool,
+    pub force_automatic_date_and_time: bool,
+}
+
+impl Default for RestrictionParams {
+    fn default() -> Self {
+        Self {
+            allow_app_installation: true,
+            allow_app_removal: true,
+            allow_camera: true,
+            allow_safari: true,
+            allow_screenshot: true,
+            allow_erase_content_and_settings: true,
+            allow_account_modification: true,
+            allow_ui_configuration_profile_installation: true,
+            allow_activation_lock: true,
+            force_automatic_date_and_time: false,
+        }
+    }
+}
+
+impl RestrictionParams {
+    pub fn lockdown() -> Self {
+        Self {
+            allow_app_installation: false,
+            allow_app_removal: false,
+            allow_camera: true,
+            allow_safari: true,
+            allow_screenshot: true,
+            allow_erase_content_and_settings: false,
+            allow_account_modification: false,
+            allow_ui_configuration_profile_installation: false,
+            allow_activation_lock: true,
+            force_automatic_date_and_time: true,
+        }
+    }
 }
 
 pub fn build_restrictions_profile(params: &RestrictionParams) -> Result<Vec<u8>, String> {
     let mut payload = Dictionary::new();
     payload.insert("allowAppInstallation".into(), params.allow_app_installation.into());
+    payload.insert("allowAppRemoval".into(), params.allow_app_removal.into());
     payload.insert("allowCamera".into(), params.allow_camera.into());
     payload.insert("allowSafari".into(), params.allow_safari.into());
     payload.insert("allowScreenShot".into(), params.allow_screenshot.into());
+    payload.insert("allowEraseContentAndSettings".into(), params.allow_erase_content_and_settings.into());
+    payload.insert("allowAccountModification".into(), params.allow_account_modification.into());
+    payload.insert(
+        "allowUIConfigurationProfileInstallation".into(),
+        params.allow_ui_configuration_profile_installation.into(),
+    );
+    payload.insert("allowActivationLock".into(), params.allow_activation_lock.into());
+    payload.insert("forceAutomaticDateAndTime".into(), params.force_automatic_date_and_time.into());
     payload.insert("PayloadType".into(), "com.apple.applicationaccess".into());
     payload.insert("PayloadIdentifier".into(), "com.rust-apple-mdm.restrictions".into());
     payload.insert("PayloadUUID".into(), Uuid::new_v4().to_string().into());

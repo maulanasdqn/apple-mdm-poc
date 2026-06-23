@@ -99,10 +99,17 @@ pub enum AdminCommand {
     },
     Restrictions {
         allow_app_installation: Option<bool>,
+        allow_app_removal: Option<bool>,
         allow_camera: Option<bool>,
         allow_safari: Option<bool>,
         allow_screenshot: Option<bool>,
+        allow_erase_content_and_settings: Option<bool>,
+        allow_account_modification: Option<bool>,
+        allow_ui_configuration_profile_installation: Option<bool>,
+        allow_activation_lock: Option<bool>,
+        force_automatic_date_and_time: Option<bool>,
     },
+    Lockdown {},
     RemoveProfile {
         identifier: String,
     },
@@ -137,16 +144,32 @@ impl AdminCommand {
             },
             AdminCommand::Restrictions {
                 allow_app_installation,
+                allow_app_removal,
                 allow_camera,
                 allow_safari,
                 allow_screenshot,
+                allow_erase_content_and_settings,
+                allow_account_modification,
+                allow_ui_configuration_profile_installation,
+                allow_activation_lock,
+                force_automatic_date_and_time,
             } => {
-                let payload = build_restrictions_profile(&RestrictionParams {
-                    allow_app_installation: allow_app_installation.unwrap_or(true),
-                    allow_camera: allow_camera.unwrap_or(true),
-                    allow_safari: allow_safari.unwrap_or(true),
-                    allow_screenshot: allow_screenshot.unwrap_or(true),
-                })?;
+                let mut p = RestrictionParams::default();
+                if let Some(v) = allow_app_installation { p.allow_app_installation = v; }
+                if let Some(v) = allow_app_removal { p.allow_app_removal = v; }
+                if let Some(v) = allow_camera { p.allow_camera = v; }
+                if let Some(v) = allow_safari { p.allow_safari = v; }
+                if let Some(v) = allow_screenshot { p.allow_screenshot = v; }
+                if let Some(v) = allow_erase_content_and_settings { p.allow_erase_content_and_settings = v; }
+                if let Some(v) = allow_account_modification { p.allow_account_modification = v; }
+                if let Some(v) = allow_ui_configuration_profile_installation { p.allow_ui_configuration_profile_installation = v; }
+                if let Some(v) = allow_activation_lock { p.allow_activation_lock = v; }
+                if let Some(v) = force_automatic_date_and_time { p.force_automatic_date_and_time = v; }
+                let payload = build_restrictions_profile(&p)?;
+                Command::InstallProfile { Payload: payload }
+            }
+            AdminCommand::Lockdown {} => {
+                let payload = build_restrictions_profile(&RestrictionParams::lockdown())?;
                 Command::InstallProfile { Payload: payload }
             }
             AdminCommand::RemoveProfile { identifier } => Command::RemoveProfile {
