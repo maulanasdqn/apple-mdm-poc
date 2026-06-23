@@ -6,6 +6,9 @@ members = [
     "apps/gateway",
     "apps/mdm",
 ]
+exclude = [
+    "apps/worker",
+]
 
 [workspace.package]
 edition = "2021"

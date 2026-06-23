@@ -1,0 +1,27 @@
+{
+  "name": "mdm",
+  "account_id": "ce8a61fd47af22e57a2c286540cd954a",
+  "main": "build/worker/shim.mjs",
+  "compatibility_date": "2024-11-01",
+  "build": {
+    "command": "worker-build --release"
+  },
+  "vars": {
+    "BASE_URL": "https://mdm.stynx.app",
+    "MDM_TOPIC": "com.apple.mgmt.External.7f1a2b3c-0000-4d2e-9a3b-rustmdmpoc01",
+    "IDENTITY_PASSWORD": "mdmidentity"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mdm",
+      "database_id": "f3836620-985e-4981-b7ba-481f06e8e78c"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "mdm.stynx.app",
+      "custom_domain": true
+    }
+  ]
+}

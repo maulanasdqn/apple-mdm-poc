@@ -29,6 +29,7 @@ impl EnrollDevice {
             topic: self.config.mdm_topic.clone(),
             pkcs12_der: identity.pkcs12_der,
             pkcs12_password: identity.password,
+            ca_cert_der: self.cert.ca_cert_der()?,
         };
         let unsigned = build_enrollment_profile(&params)?;
         let signed = self.cert.sign_profile(&unsigned)?;
